@@ -57,9 +57,9 @@ const benefits: Benefit[] = [
   },
 ];
 
-const ease = [0.22, 1, 0.36, 1] as const;
+const smoothEase = [0.22, 1, 0.36, 1] as const;
 
-const focus =
+const focusClass =
   "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ed1c24]";
 
 type BenefitCardProps = {
@@ -87,14 +87,40 @@ function BenefitCard({
       transition={{
         duration: reducedMotion ? 0 : 0.75,
         delay: reducedMotion ? 0 : index * 0.1,
-        ease,
+        ease: smoothEase,
       }}
       className="h-full"
     >
-      <div className="group flex h-full min-h-[238px] flex-col items-center rounded-[20px] border border-red-200/80 bg-white px-5 py-7 text-center shadow-[0_10px_24px_-16px_rgba(0,0,0,0.16)] transition-[transform,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:border-[#ed1c24] [@media(hover:hover)]:hover:shadow-[0_18px_32px_-18px_rgba(237,28,36,0.28)] motion-reduce:transform-none motion-reduce:transition-none">
+      {/* Separate hover transition from the entrance animation */}
+      <div
+        className="
+          group relative flex h-full min-h-[238px] flex-col
+          items-center rounded-[20px] border border-red-200/80
+          bg-white px-5 py-7 text-center
+          shadow-[0_10px_24px_-16px_rgba(0,0,0,0.16)]
+          transition-[translate,border-color,box-shadow]
+          duration-500
+          ease-[cubic-bezier(0.22,1,0.36,1)]
+          lg:hover:-translate-y-2
+          lg:hover:border-[#ed1c24]
+          lg:hover:shadow-[0_22px_38px_-18px_rgba(237,28,36,0.3)]
+          motion-reduce:transition-none
+          motion-reduce:lg:hover:translate-y-0
+        "
+      >
+        {/* Layered icon */}
         <div className="mb-4 flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-[#fff0f2]">
           <div className="flex h-[56px] w-[56px] items-center justify-center rounded-full bg-[#ffdade]">
-            <div className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[#ffbdc7] text-[#ed1c24] transition-colors duration-500 ease-out [@media(hover:hover)]:group-hover:bg-[#ed1c24] [@media(hover:hover)]:group-hover:text-white motion-reduce:transition-none">
+            <div
+              className="
+                flex h-[42px] w-[42px] items-center justify-center
+                rounded-full bg-[#ffbdc7] text-[#ed1c24]
+                transition-colors duration-500 ease-out
+                lg:group-hover:bg-[#ed1c24]
+                lg:group-hover:text-white
+                motion-reduce:transition-none
+              "
+            >
               <Icon
                 size={22}
                 strokeWidth={1.9}
@@ -118,14 +144,16 @@ function BenefitCard({
 
 export default function WhyChooseVyoncut() {
   const sectionRef = useRef<HTMLElement>(null);
-  const touchStart = useRef<number | null>(null);
+  const touchStartRef = useRef<number | null>(null);
   const directionRef = useRef(1);
-  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+
+  const resumeTimerRef = useRef<
+    ReturnType<typeof setTimeout> | null
+  >(null);
 
   const headingId = useId();
   const sliderId = useId();
+
   const reducedMotion = Boolean(useReducedMotion());
 
   const entered = useInView(sectionRef, {
@@ -148,11 +176,12 @@ export default function WhyChooseVyoncut() {
 
   const desktop = visibleCards === 5;
   const lastSlide = benefits.length - visibleCards;
-  const safeSlide = Math.min(slide, lastSlide);
+  const safeSlide = Math.max(0, Math.min(slide, lastSlide));
 
   const showBackground = reducedMotion || backgroundStarted;
   const showCards = reducedMotion || cardsReady;
 
+  // Match the Tailwind responsive card widths.
   useEffect(() => {
     const tabletQuery = window.matchMedia("(min-width: 640px)");
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
@@ -161,6 +190,7 @@ export default function WhyChooseVyoncut() {
       setVisibleCards(
         desktopQuery.matches ? 5 : tabletQuery.matches ? 2 : 1
       );
+
       setSlide(0);
       directionRef.current = 1;
     }
@@ -176,30 +206,35 @@ export default function WhyChooseVyoncut() {
     };
   }, []);
 
+  // Stop automatic sliding when the browser tab is hidden.
   useEffect(() => {
     function onVisibilityChange() {
       setPageVisible(!document.hidden);
     }
 
     onVisibilityChange();
+
     document.addEventListener(
       "visibilitychange",
       onVisibilityChange
     );
 
-    return () =>
+    return () => {
       document.removeEventListener(
         "visibilitychange",
         onVisibilityChange
       );
+    };
   }, []);
 
+  // Heading first, then the desktop background.
   useEffect(() => {
     if (!entered || reducedMotion) return;
 
-    // Mobile/tablet has no background fill to wait for.
     const timer = window.setTimeout(() => {
       setBackgroundStarted(true);
+
+      // Mobile/tablet has no background animation to wait for.
       if (!desktop) setCardsReady(true);
     }, 850);
 
@@ -214,6 +249,7 @@ export default function WhyChooseVyoncut() {
     };
   }, []);
 
+  // Slide gently back and forth without jumping at the end.
   useEffect(() => {
     if (
       desktop ||
@@ -230,10 +266,16 @@ export default function WhyChooseVyoncut() {
 
     const timer = window.setInterval(() => {
       setSlide((current) => {
-        const position = Math.min(current, lastSlide);
+        const position = Math.max(
+          0,
+          Math.min(current, lastSlide)
+        );
 
-        if (position >= lastSlide) directionRef.current = -1;
-        else if (position <= 0) directionRef.current = 1;
+        if (position >= lastSlide) {
+          directionRef.current = -1;
+        } else if (position <= 0) {
+          directionRef.current = 1;
+        }
 
         return position + directionRef.current;
       });
@@ -306,7 +348,13 @@ export default function WhyChooseVyoncut() {
             className="h-full w-full drop-shadow-[0_18px_14px_rgba(0,0,0,0.14)]"
           >
             <path
-              d="M0 92 C420 240 1010 500 1440 330 L1440 415 C1030 550 420 465 0 355 Z"
+              d="
+                M0 92
+                C420 240 1010 500 1440 330
+                L1440 415
+                C1030 550 420 465 0 355
+                Z
+              "
               fill="#191c20"
             />
           </svg>
@@ -325,7 +373,7 @@ export default function WhyChooseVyoncut() {
           }}
           transition={{
             duration: reducedMotion ? 0 : 0.8,
-            ease,
+            ease: smoothEase,
           }}
           className="mx-auto max-w-[600px] text-center"
         >
@@ -356,7 +404,7 @@ export default function WhyChooseVyoncut() {
           </p>
         </motion.div>
 
-        {/* Responsive slider */}
+        {/* Cards / responsive slider */}
         <div
           role="region"
           aria-label="VYONCUT benefits"
@@ -376,24 +424,24 @@ export default function WhyChooseVyoncut() {
             className="overflow-hidden"
             style={{ touchAction: "pan-y" }}
             onTouchStart={(event) => {
-              touchStart.current = event.touches[0].clientX;
+              touchStartRef.current = event.touches[0].clientX;
               pauseTemporarily();
             }}
             onTouchEnd={(event) => {
-              if (touchStart.current === null || desktop) return;
+              if (touchStartRef.current === null || desktop) return;
 
               const distance =
-                touchStart.current -
+                touchStartRef.current -
                 event.changedTouches[0].clientX;
 
               if (Math.abs(distance) > 45) {
                 moveTo(safeSlide + (distance > 0 ? 1 : -1));
               }
 
-              touchStart.current = null;
+              touchStartRef.current = null;
             }}
             onTouchCancel={() => {
-              touchStart.current = null;
+              touchStartRef.current = null;
             }}
           >
             <motion.ul
@@ -404,9 +452,9 @@ export default function WhyChooseVyoncut() {
               }}
               transition={{
                 duration: reducedMotion ? 0 : 0.85,
-                ease,
+                ease: smoothEase,
               }}
-              className="flex py-5"
+              className="flex pt-6 pb-8"
             >
               {benefits.map((benefit, index) => {
                 const offscreen =
@@ -432,15 +480,15 @@ export default function WhyChooseVyoncut() {
             </motion.ul>
           </div>
 
-          {/* Mobile/tablet controls — no play icon */}
-          <div className="mt-2 flex items-center justify-center gap-3 lg:hidden">
+          {/* Mobile/tablet controls */}
+          <div className="flex items-center justify-center gap-3 lg:hidden">
             <button
               type="button"
               aria-label="Previous benefit"
               aria-controls={sliderId}
               disabled={safeSlide === 0}
               onClick={() => moveTo(safeSlide - 1)}
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 transition-colors duration-300 hover:border-[#ed1c24] hover:text-[#ed1c24] disabled:cursor-not-allowed disabled:opacity-30 ${focus}`}
+              className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 transition-colors duration-300 hover:border-[#ed1c24] hover:text-[#ed1c24] disabled:cursor-not-allowed disabled:opacity-30 ${focusClass}`}
             >
               <ChevronLeft size={18} aria-hidden="true" />
             </button>
@@ -458,10 +506,10 @@ export default function WhyChooseVyoncut() {
                     }
                     aria-controls={sliderId}
                     onClick={() => moveTo(index)}
-                    className={`flex h-10 w-7 items-center justify-center rounded-md ${focus}`}
+                    className={`flex h-10 w-7 cursor-pointer items-center justify-center rounded-md ${focusClass}`}
                   >
                     <span
-                      className={`h-1.5 rounded-full transition-[width,background-color] duration-500 ${
+                      className={`h-1.5 rounded-full transition-[width,background-color] duration-500 motion-reduce:transition-none ${
                         safeSlide === index
                           ? "w-5 bg-[#ed1c24]"
                           : "w-1.5 bg-zinc-300"
@@ -478,7 +526,7 @@ export default function WhyChooseVyoncut() {
               aria-controls={sliderId}
               disabled={safeSlide === lastSlide}
               onClick={() => moveTo(safeSlide + 1)}
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 transition-colors duration-300 hover:border-[#ed1c24] hover:text-[#ed1c24] disabled:cursor-not-allowed disabled:opacity-30 ${focus}`}
+              className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 transition-colors duration-300 hover:border-[#ed1c24] hover:text-[#ed1c24] disabled:cursor-not-allowed disabled:opacity-30 ${focusClass}`}
             >
               <ChevronRight size={18} aria-hidden="true" />
             </button>
