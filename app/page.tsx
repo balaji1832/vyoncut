@@ -1,4 +1,8 @@
+import CuttingProcess from "@/components/Homepage/CuttingProcess";
+import EnquiryCTA from "@/components/Homepage/EnquiryCTA";
 import HeroBanner from "@/components/Homepage/HeroBanner";
+import MachineRange from "@/components/Homepage/MachineRange";
+import MachinesInAction from "@/components/Homepage/MachinesInAction";
 import ProductionSection from "@/components/Homepage/ProductionSection";
 import WhyChooseVyoncut from "@/components/Homepage/WhyChooseVyoncut";
 
@@ -20,7 +24,16 @@ export default function Home() {
      
      <ProductionSection />
 
+     <MachineRange />
+
      <WhyChooseVyoncut />
+
+     <MachinesInAction />
+
+     <CuttingProcess />
+     
+     <EnquiryCTA />
+  
     </main>
   );
 }
