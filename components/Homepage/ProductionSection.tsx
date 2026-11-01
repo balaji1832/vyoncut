@@ -6,6 +6,8 @@ import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Zap } from "lucide-react";
 
+import { usePageReady } from "@/components/Layout/PageLoader";
+
 type RevealProps = {
   children: ReactNode;
   className?: string;
@@ -18,6 +20,7 @@ function Reveal({
   delay = 0,
 }: RevealProps) {
   const reducedMotion = useReducedMotion();
+  const pageReady = usePageReady();
 
   return (
     <motion.div
@@ -29,10 +32,13 @@ function Reveal({
               y: 24,
             }
       }
-      whileInView={{
-        opacity: 1,
-        y: 0,
-      }}
+      whileInView={
+        pageReady
+          ? { opacity: 1, y: 0 }
+          : reducedMotion
+            ? undefined
+            : { opacity: 0, y: 24 }
+      }
       viewport={{
         once: true,
         amount: 0.2,

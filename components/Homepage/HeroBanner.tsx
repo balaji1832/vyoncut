@@ -5,6 +5,8 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 
+import { usePageReady } from "@/components/Layout/PageLoader";
+
 type HeroBannerProps = {
   imageSrc?: string;
   tabletImageSrc?: string;
@@ -35,6 +37,7 @@ export default function HeroBanner({
   secondaryHref = "/contact#enquiry",
 }: HeroBannerProps) {
   const reducedMotion = useReducedMotion();
+  const pageReady = usePageReady();
   const tabletSrc = tabletImageSrc ?? imageSrc;
   const mobileSrc = mobileImageSrc ?? tabletSrc;
 
@@ -87,8 +90,12 @@ export default function HeroBanner({
 
       <div className="relative z-10 mx-auto flex min-h-[660px] w-full max-w-[1320px] flex-col justify-center px-5 pt-32 pb-7 sm:px-8 md:min-h-[620px] md:px-10 lg:h-full lg:min-h-0 lg:px-12 lg:pt-28 lg:pb-8">
         <motion.div
-          initial={reducedMotion ? false : { opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={false}
+          animate={
+            pageReady
+              ? { opacity: 1, y: 0 }
+              : { opacity: 0, y: reducedMotion ? 0 : 24 }
+          }
           transition={{
             duration: reducedMotion ? 0 : 0.75,
             delay: reducedMotion ? 0 : 0.15,
@@ -146,8 +153,8 @@ export default function HeroBanner({
         </motion.div>
 
         <motion.div
-          initial={reducedMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={false}
+          animate={{ opacity: pageReady ? 1 : 0 }}
           transition={{
             duration: reducedMotion ? 0 : 0.6,
             delay: reducedMotion ? 0 : 0.4,

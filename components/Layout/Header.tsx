@@ -7,6 +7,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, ChevronDown, Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { usePageReady } from "@/components/Layout/PageLoader";
+
 const products = [
   { name: "EcoCUT Series", href: "/products/ecocut" },
   { name: "MiniCUT Series", href: "/products/minicut" },
@@ -35,6 +37,7 @@ export default function Header({
 }: HeaderProps) {
   const pathname = usePathname();
   const reducedMotion = useReducedMotion();
+  const pageReady = usePageReady();
 
   const headerRef = useRef<HTMLElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
@@ -183,8 +186,12 @@ export default function Header({
   return (
     <motion.header
       ref={headerRef}
-      initial={reducedMotion ? false : { opacity: 0, y: -24 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={false}
+      animate={
+        pageReady
+          ? { opacity: 1, y: 0 }
+          : { opacity: 0, y: reducedMotion ? 0 : -24 }
+      }
       transition={{
         duration: reducedMotion ? 0 : 0.7,
         ease: [0.22, 1, 0.36, 1],
